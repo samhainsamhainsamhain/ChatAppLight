@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+
 import { Socket } from "socket.io-client";
+
+import classes from "./Chat.module.css";
 
 interface Props {
   socket: Socket;
@@ -32,7 +35,7 @@ export default function Chat({ socket, username, room }: Props) {
     if (currentMessage === "") {
       return;
     }
-    // forming message object 
+    // forming message object
     const messageData: MessageObj = {
       room,
       author: username,
@@ -49,23 +52,52 @@ export default function Chat({ socket, username, room }: Props) {
     setCurrentMessage("");
   }
 
+  const getMessageStyle = (messageContent: MessageObj) => {
+    if (messageContent.author === username) {
+      return classes.owner;
+    }
+    return classes.other;
+  };
+  
+  // on receiveng new messages chat window now scrolls to bottom 
+
+  const messagesEndRef = useRef<null | HTMLDivElement>(null)
+
+  function scrollToBottom(): void {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messageList]);
+
   return (
-    <div className="chat">
-      <div className="chat-header">
-        <p>Live Chat</p>
-      </div>
-      <div className="chat-body">
+    <div className={classes.chatWindow}>
+      <header>
+        <h3>Live Chat</h3>
+      </header>
+      <div className={classes.chatContainer}>
         {messageList.map((messageContent) => {
           return (
-            <div key={Math.random()}>
-              <h3>{messageContent.author}</h3>
-              <p>{messageContent.message}</p>
+            <div
+              key={Math.random()}
+              className={classes.message}
+              id={getMessageStyle(messageContent)}
+            >
+              <h4 key={Math.random()} className={classes.messageAuthor}>
+                {messageContent.author}
+              </h4>
+              <p key={Math.random()} className={classes.messageBody}>
+                {messageContent.message}
+              </p>
             </div>
           );
         })}
+        <div ref={messagesEndRef} />
       </div>
-      <div className="chat-footer">
-        <form onSubmit={sendMessage}>
+      <div className={classes.chatFooter}>
+        <form className={classes.chatForm}
+        onSubmit={sendMessage}>
           <input
             type="text"
             value={currentMessage}
